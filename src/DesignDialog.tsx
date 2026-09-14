@@ -1,39 +1,32 @@
-import {useEffect,useRef,useState} from 'react';
+import React,{useRef,useState} from 'react';
 import {getStroke} from 'perfect-freehand';
 import {SVGLoader} from 'three/addons/loaders/SVGLoader.js';
-import {ArrowRight,Check,PenLine,Trash2,Undo2,Upload,X} from 'lucide-react';
-import {motifs,svgMarkup,type Motif} from './motifs';
-
-function outline(points:number[][],size:number){
-  const edge=getStroke(points,{size,thinning:.15,smoothing:.65,streamline:.4,simulatePressure:true});
-  if(edge.length<3)return '';
-  return `M${edge.map(p=>`${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('L')}Z`;
-}
-function normalizedPaths(svg:string,scale=1,x=60,y=60){
-  const parsed=new SVGLoader().parse(svg);
-  const paths=parsed.paths.filter(p=>p.userData?.style.fill!=='none');
-  const all=paths.flatMap(p=>p.subPaths.flatMap(s=>s.getPoints(12)));
-  if(!all.length)throw new Error('Choose an SVG with filled shapes.');
-  const minX=Math.min(...all.map(p=>p.x)),minY=Math.min(...all.map(p=>p.y));
-  const width=Math.max(...all.map(p=>p.x))-minX,height=Math.max(...all.map(p=>p.y))-minY;
-  const factor=108/Math.max(width,height,1)*scale,cx=minX+width/2,cy=minY+height/2;
-  return paths.map(p=>p.subPaths.map(s=>`M${s.getPoints(12).map(v=>`${((v.x-cx)*factor+x).toFixed(2)},${((v.y-cy)*factor+y).toFixed(2)}`).join('L')}Z`).join(' '));
-}
-export function DesignDialog({onClose,onCreate}:{onClose:()=>void;onCreate:(m:Motif)=>void}){
-  const dialog=useRef<HTMLDialogElement>(null),drawing=useRef<HTMLCanvasElement>(null),input=useRef<HTMLInputElement>(null),points=useRef<number[][]>([]),isDrawing=useRef(false);
-  const [actions,setActions]=useState<string[][]>([]),[draft,setDraft]=useState(''),[size,setSize]=useState(4),[ornament,setOrnament]=useState<Motif|null>(null),[message,setMessage]=useState('');
-  useEffect(()=>{dialog.current!.showModal();},[]);
-  useEffect(()=>{const c=drawing.current!,ctx=c.getContext('2d')!;ctx.clearRect(0,0,c.width,c.height);ctx.save();ctx.scale(c.width/120,c.height/120);ctx.fillStyle='#29362e';for(const d of [...actions.flat(),draft].filter(Boolean))ctx.fill(new Path2D(d),'evenodd');ctx.restore();},[actions,draft]);
-  function point(e:{clientX:number;clientY:number}){const r=drawing.current!.getBoundingClientRect();return[(e.clientX-r.left)/r.width*120,(e.clientY-r.top)/r.height*120,.5];}
-  function addOrnament(m:Motif,p:number[]){setActions(a=>[...a,normalizedPaths(svgMarkup(m),.35,p[0],p[1])]);}
-  async function importSVG(file:File|undefined){if(!file)return;if(file.size>120000){setMessage('Choose an SVG smaller than 120 KB.');return;}try{const text=await file.text();const dom=new DOMParser().parseFromString(text,'image/svg+xml');if(dom.querySelector('parsererror')||dom.documentElement.localName!=='svg'||dom.querySelectorAll('*').length>400)throw new Error('This SVG could not be read. Try a simpler filled motif.');const paths=normalizedPaths(text);if(paths.join('').length>160000)throw new Error('This motif is too detailed. Try a simpler SVG.');setActions(a=>[...a,paths]);setMessage('');}catch(e){setMessage(e instanceof Error?e.message:'This SVG could not be read.');}}
-  return <dialog ref={dialog} className="design-dialog" onCancel={onClose} onClick={e=>{if(e.target===dialog.current)onClose();}} aria-labelledby="design-title">
-    <div className="design-inner"><div className="panel-heading"><div><span className="overline">YOUR OWN PRINTING FACE</span><h2 id="design-title">Begin with a mark.</h2></div><button className="icon-button" aria-label="Close drawing" title="Close drawing" onClick={onClose}><X size={18}/></button></div>
-      <div className="drawing-surface"><canvas ref={drawing} width="600" height="600" aria-label="Draw your own motif" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const motif=motifs.find(m=>m.id===e.dataTransfer.getData('text/plain'));if(motif)addOrnament(motif,point(e));}} onPointerDown={e=>{const p=point(e);if(ornament){addOrnament(ornament,p);return;}e.currentTarget.setPointerCapture(e.pointerId);points.current=[p];isDrawing.current=true;setDraft(outline(points.current,size));}} onPointerMove={e=>{if(!isDrawing.current)return;points.current.push(point(e));setDraft(outline(points.current,size));}} onPointerUp={()=>{if(!isDrawing.current)return;const path=outline(points.current,size);if(path)setActions(a=>[...a,[path]]);isDrawing.current=false;setDraft('');}} onPointerCancel={()=>{isDrawing.current=false;setDraft('');}}/></div>
-      <div className="ornament-strip" aria-label="Ornaments">{motifs.slice(0,8).map(m=><button key={m.id} className={ornament?.id===m.id?'active':''} aria-label={`Place ${m.name}`} title={`Place ${m.name}`} draggable onDragStart={e=>e.dataTransfer.setData('text/plain',m.id)} onClick={()=>setOrnament(m)}><svg viewBox="0 0 120 120" aria-hidden="true">{m.paths.map((d,i)=><path key={i} d={d} fill="currentColor" fillRule="evenodd"/>)}</svg></button>)}</div>
-      <div className="drawing-tools"><button className={`icon-button ${!ornament?'active':''}`} aria-label="Draw with brush" title="Draw with brush" onClick={()=>setOrnament(null)}><PenLine size={18}/></button><input aria-label="Brush size" type="range" min="1" max="10" step=".5" value={size} onChange={e=>setSize(Number(e.target.value))}/><button className="icon-button" aria-label="Undo drawing" title="Undo drawing" disabled={!actions.length} onClick={()=>setActions(a=>a.slice(0,-1))}><Undo2 size={18}/></button><button className="icon-button" aria-label="Clear drawing" title="Clear drawing" disabled={!actions.length} onClick={()=>setActions([])}><Trash2 size={18}/></button><button className="icon-button" aria-label="Import SVG" title="Import SVG" onClick={()=>input.current!.click()}><Upload size={18}/></button><input hidden ref={input} type="file" accept=".svg,image/svg+xml" onChange={e=>void importSVG(e.target.files?.[0])}/></div>
-      {message&&<p role="alert" className="drawing-message">{message}</p>}
-      <button className="primary make-block" disabled={!actions.length||actions.flat().join('').length>200000} onClick={()=>onCreate({id:`custom-${Date.now()}`,name:'Your carved motif',family:'Custom',paths:actions.flat()})}>Carve this block<ArrowRight size={17}/></button>
-    </div>
-  </dialog>;
+import {MousePointer2,PenLine,Undo2,Trash2,RotateCw,ArrowRight} from 'lucide-react';
+import {motifs,type Motif} from './motifs';
+type Element={id:number;paths:string[];x:number;y:number;scale:number;rotation:number};
+export function DesignDialog({onCreate}:{onCreate:(m:Motif)=>void}){
+ const [elements,setElements]=useState<Element[]>([]),[history,setHistory]=useState<Element[][]>([]),[selected,setSelected]=useState<number|null>(null),[mode,setMode]=useState<'move'|'draw'>('move'),[brush,setBrush]=useState(2),[draft,setDraft]=useState('');
+ const surface=useRef<SVGSVGElement>(null),gesture=useRef<{x:number;y:number;original:Element[];points:number[][];id:number|null}|null>(null),serial=useRef(0);
+ const transform=(e:Element)=>`translate(${e.x} ${e.y}) rotate(${e.rotation}) scale(${e.scale}) translate(-60 -60)`;
+ const remember=()=>setHistory(h=>[...h.slice(-39),elements]);
+ const point=(x:number,y:number)=>{const r=surface.current!.getBoundingClientRect();return {x:Math.max(0,Math.min(120,(x-r.left)/r.width*120)),y:Math.max(0,Math.min(120,(y-r.top)/r.height*120))};};
+ const add=(m:Motif,x=60,y=60)=>{remember();const id=++serial.current;setElements(a=>[...a,{id,paths:m.paths,x,y,scale:.48,rotation:0}]);setSelected(id);setMode('move');};
+ const change=(patch:Partial<Element>)=>{remember();setElements(a=>a.map(e=>e.id===selected?{...e,...patch}:e));};
+ const chosen=elements.find(e=>e.id===selected);
+ const outline=(points:number[][])=>{const p=getStroke(points,{size:brush,thinning:.2,smoothing:.6,streamline:.5,simulatePressure:true});return p.length?`M${p.map(v=>v.join(',')).join('L')}Z`:'';};
+ const finish=()=>{const g=gesture.current;if(!g)return;if(mode==='draw'){const d=outline(g.points);if(d){remember();setElements(a=>[...a,{id:++serial.current,paths:[d],x:60,y:60,scale:1,rotation:0}]);}}else if(g.id!==null)setHistory(h=>[...h.slice(-39),g.original]);gesture.current=null;setDraft('');};
+ const carve=()=>{const svg=`<svg xmlns="http://www.w3.org/2000/svg">${elements.map(e=>`<g transform="${transform(e)}">${e.paths.map(d=>`<path d="${d}" fill="#000" fill-rule="evenodd"/>`).join('')}</g>`).join('')}</svg>`;const paths=new SVGLoader().parse(svg).paths.map(p=>p.subPaths.map(s=>`M${s.getPoints(12).map(v=>`${v.x.toFixed(3)},${v.y.toFixed(3)}`).join('L')}Z`).join(''));onCreate({id:`custom-${Date.now()}`,name:'Your carved motif',family:'Original',paths});};
+ return <section className="composer" aria-label="Compose your block">
+  <div className="compose-heading"><span className="overline">01 / COMPOSE</span><h1>Make your mark.</h1></div>
+  <div className="compose-workspace">
+   <div className="compose-toolbar"><button title="Select and move" aria-label="Select and move" aria-pressed={mode==='move'} onClick={()=>setMode('move')}><MousePointer2/></button><button title="Draw" aria-label="Draw" aria-pressed={mode==='draw'} onClick={()=>{setMode('draw');setSelected(null);}}><PenLine/></button><input title="Brush size" aria-label="Brush size" type="range" min=".5" max="6" step=".5" value={brush} onChange={e=>setBrush(+e.target.value)}/><span/><button title="Undo" aria-label="Undo design" disabled={!history.length} onClick={()=>{setElements(history[history.length-1]);setHistory(h=>h.slice(0,-1));setSelected(null);}}><Undo2/></button><button title="Clear canvas" aria-label="Clear canvas" disabled={!elements.length} onClick={()=>{remember();setElements([]);setSelected(null);}}><Trash2/></button></div>
+   <svg className="compose-canvas" ref={surface} viewBox="0 0 120 120" role="img" aria-label="Motif drawing canvas" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const m=motifs.find(m=>m.id===e.dataTransfer.getData('text/plain'));if(m){const p=point(e.clientX,e.clientY);add(m,p.x,p.y);}}} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);const p=point(e.clientX,e.clientY),id=Number((e.target as SVGElement).closest('[data-element]')?.getAttribute('data-element'))||null;setSelected(mode==='move'?id:null);gesture.current={...p,original:elements,points:[[p.x,p.y]],id};if(mode==='draw')setDraft(outline([[p.x,p.y]]));}} onPointerMove={e=>{const g=gesture.current;if(!g)return;const p=point(e.clientX,e.clientY);if(mode==='draw'){g.points.push([p.x,p.y]);setDraft(outline(g.points));}else if(g.id!==null)setElements(g.original.map(el=>el.id===g.id?{...el,x:Math.max(15,Math.min(105,el.x+p.x-g.x)),y:Math.max(15,Math.min(105,el.y+p.y-g.y))}:el));}} onPointerUp={finish} onPointerCancel={finish}>
+    <defs><pattern id="drawing-grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#e9eceb" strokeWidth=".15"/></pattern></defs><rect width="120" height="120" fill="white"/><rect width="120" height="120" fill="url(#drawing-grid)"/>
+    {elements.map(el=><g key={el.id} data-element={el.id} transform={transform(el)} fill={selected===el.id?'#315f66':'#25312e'}>{el.paths.map((d,i)=><path key={i} d={d} fillRule="evenodd"/>)}</g>)}<path d={draft} fill="#25312e"/>
+   </svg>
+   <div className="element-controls"><span>{elements.length} {elements.length===1?'element':'elements'}</span>{chosen&&<><label>Scale<input aria-label="Element scale" type="range" min=".15" max=".85" step=".05" value={chosen.scale} onChange={e=>change({scale:+e.target.value})}/></label><button title="Rotate element" aria-label="Rotate element" onClick={()=>change({rotation:chosen.rotation+15})}><RotateCw size={17}/></button><button title="Delete element" aria-label="Delete element" onClick={()=>{remember();setElements(a=>a.filter(e=>e.id!==selected));setSelected(null);}}><Trash2 size={17}/></button></>}</div>
+  </div>
+  <div className="compose-library"><span className="overline">ORNAMENTS</span><div className="compose-motifs">{motifs.map(m=><button key={m.id} draggable onDragStart={e=>e.dataTransfer.setData('text/plain',m.id)} onClick={()=>add(m)} title={m.name} aria-label={`Add ${m.name}`}><svg viewBox="0 0 120 120">{m.paths.map((d,i)=><path key={i} d={d} fill="currentColor" fillRule="evenodd"/>)}</svg><span>{m.name}</span></button>)}</div></div>
+  <footer className="compose-footer"><span>YOUR ORIGINAL / {String(elements.length).padStart(2,'0')}</span><button className="primary" disabled={!elements.length} onClick={carve}>Make block<ArrowRight size={17}/></button></footer>
+ </section>;
 }

@@ -93,10 +93,8 @@ export class Workshop {
     const pos=clothGeo.attributes.position as THREE.BufferAttribute;
     this.baseHeights=new Float32Array(pos.count);
     for(let i=0;i<pos.count;i++) {
-      let x=pos.getX(i),z=pos.getZ(i);const edge=Math.pow(Math.abs(z)/(H/2),14);
-      if(Math.abs(x)>W/2-.01) x+=Math.sin(z*22)*.018+Math.cos(z*57)*.008;
-      if(Math.abs(z)>H/2-.01) z+=Math.sin(x*7)*.016+Math.cos(x*25)*.006;
-      const y=this.fabricHeight(x,z)+edge*(.027+Math.sin(x*2.2)*.022);
+      const x=pos.getX(i),z=pos.getZ(i);
+      const y=this.fabricHeight(x,z);
       pos.setXYZ(i,x,y,z);this.baseHeights[i]=y;
     }
     clothGeo.computeVertexNormals();
@@ -120,7 +118,7 @@ export class Workshop {
     this.state.ready=true;this.emit();this.frame=requestAnimationFrame(this.animate);
   }
   fabricHeight(x:number,z:number) {
-    return .10+.035*Math.sin(x*1.7+z*.45)+.024*Math.sin(z*5.3+x*.38)+.09*Math.exp(-Math.pow((z+.6+.12*Math.sin(x))/.21,2))+.022*Math.sin(x*.7+z*2.1);
+    return .10+.002*Math.sin(x*1.7+z*.45)+.001*Math.sin(z*5.3+x*.38);
   }
   addFringe() {
     const points:number[]=[],rand=seeded(43);
@@ -228,6 +226,7 @@ export class Workshop {
   pointerCancel=()=>{this.draggingView=false;if(this.press){this.press=null;this.state.pressing=false;this.pressDepth=0;this.restoreCloth();this.target.y=.7;this.emit();}};
   wheel=(e:WheelEvent)=>{e.preventDefault();if(this.state.held&&this.state.view==='work'&&!e.ctrlKey)this.rotate(Math.sign(e.deltaY)*Math.PI/24);else this.zoom=clamp(this.zoom+e.deltaY*.00065,.65,1.5);};
   keyDown=(e:KeyboardEvent)=>{
+    if(document.querySelector('[data-stage="compose"]'))return;
     if((e.target as HTMLElement).closest('input,textarea,button,[role="dialog"]'))return;
     if(e.ctrlKey||e.metaKey){if(e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?this.redo():this.undo();}return;}
     if(e.code==='Space'){e.preventDefault();if(!this.state.held)this.pickUp();else if(!e.repeat&&!this.press)this.startPress('cloth',this.target.clone(),true);}
