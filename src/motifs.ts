@@ -7,7 +7,10 @@ export function circle(x: number, y: number, r: number) {
 function petal(cx: number, cy: number, angle: number, length: number, width: number) {
   const a = angle * Math.PI / 180;
   const p = (x: number, y: number) => `${n(cx + x*Math.cos(a)-y*Math.sin(a))},${n(cy+x*Math.sin(a)+y*Math.cos(a))}`;
-  return `M ${p(0,0)} C ${p(-width,-length*.35)} ${p(-width*.6,-length*.8)} ${p(0,-length)} C ${p(width*.6,-length*.8)} ${p(width,-length*.35)} ${p(0,0)} Z`;
+  const outer=`M ${p(0,0)} C ${p(-width,-length*.35)} ${p(-width*.6,-length*.8)} ${p(0,-length)} C ${p(width*.6,-length*.8)} ${p(width,-length*.35)} ${p(0,0)} Z`;
+  if(length<14)return outer;
+  const channels=[-1,1].flatMap(side=>[.3,.46,.62,.77].map(t=>`M ${p(side*1.1,-length*t)} Q ${p(side*width*.43,-length*(t+.05))} ${p(side*width*.49,-length*(t+.14))} Q ${p(side*width*.2,-length*(t+.05))} ${p(side*1.1,-length*(t+.045))} Z`));
+  return outer+' '+channels.join(' ');
 }
 function flower(cx: number, cy: number, count: number, radius: number, length: number, width: number) {
   return Array.from({length:count},(_,i)=> {

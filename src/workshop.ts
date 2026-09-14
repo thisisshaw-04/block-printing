@@ -143,11 +143,22 @@ export class Workshop {
     const geometry=new THREE.ExtrudeGeometry(shapes,{depth,bevelEnabled:true,bevelSize:.12,bevelThickness:.002,bevelSegments:1,curveSegments:7});
     geometry.scale(size/120,size/120,1);geometry.translate(-size/2,-size/2,0);geometry.rotateX(Math.PI/2);
     const uv=geometry.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/120,uv.getY(i)/120);
-    const mesh=new THREE.Mesh(geometry,material);mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
+    const mesh=new THREE.Mesh(geometry,[material,this.darkWood]);mesh.castShadow=true;mesh.receiveShadow=true;return mesh;
+  }
+  blockBody(motif:Motif,size:number,depth=.36){
+    const points=new SVGLoader().parse(svgMarkup(motif)).paths.flatMap(p=>p.subPaths.flatMap(s=>s.getPoints(14))).map(p=>({x:(p.x-60)*size/120,y:(p.y-60)*size/120})).sort((a,b)=>a.x-b.x||a.y-b.y);
+    const cross=(a:typeof points[0],b:typeof points[0],c:typeof points[0])=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+    const half=(list:typeof points)=>{const h:typeof points=[];for(const p of list){while(h.length>1&&cross(h[h.length-2],h[h.length-1],p)<=0)h.pop();h.push(p);}return h;};
+    const hull=half(points).slice(0,-1).concat(half([...points].reverse()).slice(0,-1));
+    const shape=new THREE.Shape();hull.forEach((p,i)=>{const length=Math.hypot(p.x,p.y)||1,x=p.x+p.x/length*.065,y=p.y+p.y/length*.065;i?shape.lineTo(x,y):shape.moveTo(x,y);});shape.closePath();
+    const geo=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:true,bevelSize:.025,bevelThickness:.014,bevelSegments:3,steps:4});
+    geo.rotateX(Math.PI/2);geo.translate(0,depth,0);
+    const pos=geo.attributes.position;for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i),y=pos.getY(i);if(y>.02&&y<depth-.02){const wear=.003*Math.sin(x*91+z*47+y*19);pos.setX(i,x+wear);pos.setZ(i,z+wear*.6);}}geo.computeVertexNormals();
+    const body=new THREE.Mesh(geo,this.darkWood);body.castShadow=true;body.receiveShadow=true;return body;
   }
   createSpareBlocks() {
     [motifs[1],motifs[2]].forEach((motif,i)=>{
-      const g=new THREE.Group();const b=new THREE.Mesh(new RoundedBoxGeometry(.84,.28,.84,3,.06),this.darkWood);b.position.y=.15;b.castShadow=true;g.add(b);
+      const g=new THREE.Group();const b=this.blockBody(motif,.68,.28);g.add(b);
       const m=this.makeRelief(motif,.68,this.wood,.065);m.rotation.x=Math.PI;m.position.y=.30;g.add(m);g.position.set(3.3+i*1.1,0,-3.45);g.rotation.y=i?-.2:.13;g.userData.motif=motif.id;this.station.add(g);this.spareBlocks.push(g);
     });
   }
@@ -160,13 +171,13 @@ export class Workshop {
     while(this.blockArt.children.length){const child=this.blockArt.children.pop()!;child.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});child.parent=null;}
     this.relief.clear();
     const s=this.state.size;
-    const body=new THREE.Mesh(new RoundedBoxGeometry(s+.16,.29,s+.16,4,.055),this.darkWood);body.position.y=.147;body.castShadow=true;body.receiveShadow=true;this.blockArt.add(body);
-    for(const x of [-.19,.19]){const support=new THREE.Mesh(new RoundedBoxGeometry(.12,.16,.20,2,.025),this.wood);support.position.set(x,.35,0);support.castShadow=true;this.blockArt.add(support);}
-    const grip=new THREE.Mesh(new RoundedBoxGeometry(.59,.16,.23,4,.055),this.wood);grip.position.y=.43;grip.castShadow=true;this.blockArt.add(grip);
+    const body=this.blockBody(this.state.motif,s);this.blockArt.add(body);
+    for(const x of [-.19,.19]){const support=new THREE.Mesh(new RoundedBoxGeometry(.12,.16,.20,2,.025),this.wood);support.position.set(x,.42,0);support.castShadow=true;this.blockArt.add(support);}
+    const grip=new THREE.Mesh(new RoundedBoxGeometry(.59,.16,.23,4,.055),this.wood);grip.position.y=.50;grip.castShadow=true;this.blockArt.add(grip);
     this.relief.add(this.makeRelief(this.state.motif,s,this.reliefMaterial));this.blockArt.add(this.relief);
     // One SVG defines both the extruded printing face and its transferred pixels.
     const label=canvas(256,256),ctx=label.getContext('2d')!;ctx.translate(128,128);ctx.scale(1.5,1.5);ctx.translate(-60,-60);ctx.fillStyle='rgba(37,24,12,.24)';this.state.motif.paths.forEach(d=>ctx.fill(new Path2D(d),'evenodd'));
-    const mark=new THREE.Mesh(new THREE.PlaneGeometry(s*.85,s*.85),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(label),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));mark.rotation.x=-Math.PI/2;mark.position.y=.294;this.blockArt.add(mark);
+    const mark=new THREE.Mesh(new THREE.PlaneGeometry(s*.85,s*.85),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(label),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));mark.rotation.x=-Math.PI/2;mark.position.y=.376;this.blockArt.add(mark);
   }
   bindEvents() {
     const el=this.renderer.domElement;
