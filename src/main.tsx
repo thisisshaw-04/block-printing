@@ -4,6 +4,7 @@ import {ArrowLeft,ArrowRight,Check,ChevronLeft,ChevronRight,Download,Droplet,Exp
 import {Workshop,type Snapshot} from './workshop';
 import {motifs,pigments,type Motif} from './motifs';
 import './style.css';
+import './polish.css';
 import {DesignDialog} from './DesignDialog';
 declare global { interface Window { __workshop?:Workshop } }
 
@@ -21,7 +22,7 @@ function App(){
   return <main className="studio" data-view={s?.view??'work'} data-stage={drawing?'compose':s?.view==='inspect'?'carve':'print'}>
     <div className="world" ref={host}/>
     <header className="masthead">
-      <a className="wordmark" href="#" onClick={e=>{e.preventDefault();setDrawing(true);setPanel(null);}}>Block Printing<span>A study in making</span></a>
+      <a className="wordmark" href="#" onClick={e=>{e.preventDefault();setDrawing(true);setPanel(null);}}><span className="brand-seal"><MotifIcon motif={motifs[3]}/></span><span className="brand-name">Block Printing<span>THE PRINTMAKER'S TABLE</span></span></a>
       <nav className="header-tools" aria-label="Studio"><span className="edition">THE PRINTMAKER'S TABLE</span><span className="mobile-overview"><Tool label="View whole textile" disabled={!s||s.pressing} onClick={()=>{setPanel(null);w().setView(s?.view==='overview'?'work':'overview');}}><Expand/></Tool></span><Tool label={s?.muted?'Enable sound':'Mute sound'} disabled={!s} onClick={()=>w().toggleMute()}>{s?.muted?<VolumeX/>:<Volume2/>}</Tool><Tool label="About the craft" onClick={()=>setPanel(panel==='about'?null:'about')} active={panel==='about'}><Info/></Tool></nav>
     </header>
     {!s&&!error&&<div className="loading"><span className="loading-mark"/><p>Preparing the worktable</p></div>}
