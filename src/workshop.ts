@@ -86,9 +86,7 @@ export class Workshop {
     const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:'#e6e3d9',roughness:1}));floor.name='studio-floor';floor.rotation.x=-Math.PI/2;floor.position.y=-.57;floor.receiveShadow=true;this.scene.add(floor);
     const tableMat=concreteMaterial();
     const table=new THREE.Mesh(new RoundedBoxGeometry(28,.52,9.1,3,.08),tableMat);table.name='worktable';table.position.y=-.28;table.receiveShadow=true;table.castShadow=true;this.scene.add(table);
-    const rockGeo=new THREE.DodecahedronGeometry(1.12,1);rockGeo.scale(1,.58,1);const rockPos=rockGeo.attributes.position;for(let i=0;i<rockPos.count;i++){const x=rockPos.getX(i),y=rockPos.getY(i),z=rockPos.getZ(i),n=1+.07*Math.sin(x*13+y*7+z*19);rockPos.setXYZ(i,x*n,y*n,z*n);}rockGeo.computeVertexNormals();
-    const rockMat=concreteMaterial();rockMat.color.set('#697064');
-    const plinth=new THREE.Mesh(rockGeo,rockMat);plinth.name='inspection-plinth';plinth.position.set(0,.06,0);plinth.castShadow=true;plinth.receiveShadow=true;plinth.visible=false;this.scene.add(plinth);
+    const plinth=new THREE.Mesh(new THREE.CylinderGeometry(.9,.94,.13,64),concreteMaterial());plinth.name='inspection-plinth';plinth.position.set(0,-.38,0);plinth.castShadow=true;plinth.receiveShadow=true;plinth.visible=false;this.scene.add(plinth);
 
     this.paintTexture=canvasTexture(this.paintCanvas);this.paintTexture.wrapS=this.paintTexture.wrapT=THREE.ClampToEdgeWrapping;
     const weave=weaveTexture();
