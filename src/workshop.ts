@@ -3,7 +3,7 @@ import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { motifs, pigments, svgMarkup, type Motif } from './motifs';
-import { canvas, canvasTexture, contactShadow, seeded, weaveTexture, woodMaterial,linenTexture } from './materials';
+import { canvas, canvasTexture, contactShadow, seeded, weaveTexture, woodMaterial,linenTexture,concreteMaterial } from './materials';
 
 export type Impression = {
   position:{x:number;z:number};rotation:number;scale:number;motif:Motif;color:string;
@@ -73,7 +73,7 @@ export class Workshop {
     this.renderer.domElement.setAttribute('aria-label','Interactive block printing worktable');
     this.renderer.domElement.tabIndex=0;this.renderer.domElement.setAttribute('role','application');
     host.append(this.renderer.domElement);
-    this.scene.background=new THREE.Color('#eeece6');
+    this.scene.background=new THREE.Color('#e9e7de');
     const pmrem=new THREE.PMREMGenerator(this.renderer), env=new RoomEnvironment();
     this.scene.environment=pmrem.fromScene(env,.04).texture;this.scene.environmentIntensity=.25;env.dispose();pmrem.dispose();
     this.scene.add(new THREE.HemisphereLight('#fffaf1','#9a9b93',.85));
@@ -82,10 +82,10 @@ export class Workshop {
     this.scene.add(sun);
     const fill=new THREE.DirectionalLight('#e4ecff',.45);fill.position.set(6,6,-3);this.scene.add(fill);
     this.scene.add(this.clothGroup,this.station,this.block);
-    const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:'#e8e7e2',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.57;floor.receiveShadow=true;this.scene.add(floor);
-    const tableMat=this.wood.clone();tableMat.map=this.wood.map!.clone();tableMat.map.repeat.set(6,2);tableMat.map.rotation=Math.PI/2;tableMat.normalMap=this.wood.normalMap!.clone();tableMat.normalMap.repeat.set(6,2);tableMat.normalMap.rotation=Math.PI/2;
-    const table=new THREE.Mesh(new RoundedBoxGeometry(28,.52,9.1,3,.08),tableMat);table.position.y=-.28;table.receiveShadow=true;table.castShadow=true;this.scene.add(table);
-    const seams=new THREE.Group();for(let z=-3.7;z<4;z+=1.28){const seam=new THREE.Mesh(new THREE.BoxGeometry(27.8,.001,.009),new THREE.MeshStandardMaterial({color:'#6f553c',roughness:1}));seam.position.set(0,-.014,z);seams.add(seam);}this.scene.add(seams);
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:'#e6e3d9',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.57;floor.receiveShadow=true;this.scene.add(floor);
+    const tableMat=concreteMaterial();
+    const table=new THREE.Mesh(new RoundedBoxGeometry(28,.52,9.1,3,.08),tableMat);table.name='worktable';table.position.y=-.28;table.receiveShadow=true;table.castShadow=true;this.scene.add(table);
+    const plinth=new THREE.Mesh(new THREE.CylinderGeometry(.96,1.02,1.3,80),concreteMaterial());plinth.name='inspection-plinth';plinth.position.set(0,.08,0);plinth.castShadow=true;plinth.receiveShadow=true;plinth.visible=false;this.scene.add(plinth);
 
     this.paintTexture=canvasTexture(this.paintCanvas);this.paintTexture.wrapS=this.paintTexture.wrapT=THREE.ClampToEdgeWrapping;
     const weave=weaveTexture();
@@ -264,6 +264,11 @@ export class Workshop {
   setView(view:Snapshot['view']) {
     if(this.press)return;
     this.state.view=view;this.orbit=0;this.elevation=0;this.zoom=1;
+    const gallery=view==='inspect';
+    this.station.visible=this.clothGroup.visible=!gallery;
+    this.scene.getObjectByName('worktable')!.visible=!gallery;
+    this.scene.getObjectByName('inspection-plinth')!.visible=gallery;
+    (this.scene.background as THREE.Color).set('#e9e7de');
     if(view==='inspect'){this.target.set(0,1.35,0);this.state.status='Turn the block. See the carved printing face.';}
     if(view==='work'){this.blockArt.rotation.x=0;this.target.set(-.7,.78,.75);this.state.held=true;this.state.status=this.state.ink>.065?'Position the block. Press, then lift.':'Touch the pigment pad to ink the block.';}
     if(view==='overview')this.state.status='Every impression, part of the whole.';

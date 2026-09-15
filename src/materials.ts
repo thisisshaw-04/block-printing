@@ -37,3 +37,19 @@ export function contactShadow() {
   ctx.fillStyle=g;ctx.fillRect(0,0,128,128);
   return new THREE.CanvasTexture(c);
 }
+
+export function concreteMaterial() {
+  const c=canvas(512,512),ctx=c.getContext('2d')!,pixels=ctx.createImageData(512,512),random=seeded(1926);
+  for(let y=0;y<512;y++)for(let x=0;x<512;x++){
+    const grain=(random()-.5)*9;
+    const cloud=Math.sin(x/53)*Math.cos(y/71)*2+Math.sin((x+y)/113)*2;
+    const pore=random()>.994?-17:0,index=(y*512+x)*4;
+    pixels.data[index]=218+grain+cloud+pore;
+    pixels.data[index+1]=214+grain+cloud+pore;
+    pixels.data[index+2]=202+grain+cloud+pore;
+    pixels.data[index+3]=255;
+  }
+  ctx.putImageData(pixels,0,0);
+  const map=canvasTexture(c,3),bump=map.clone();bump.colorSpace=THREE.NoColorSpace;
+  return new THREE.MeshStandardMaterial({map,bumpMap:bump,bumpScale:.018,roughness:.96,color:'#f4f1e9'});
+}

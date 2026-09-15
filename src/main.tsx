@@ -5,6 +5,8 @@ import {Workshop,type Snapshot} from './workshop';
 import {motifs,pigments,type Motif} from './motifs';
 import './style.css';
 import './polish.css';
+import './gallery.css';
+import './atelier.css';
 import {DesignDialog} from './DesignDialog';
 declare global { interface Window { __workshop?:Workshop } }
 
@@ -30,7 +32,7 @@ function App(){
     <nav className="journey" aria-label="Making stages">{['Compose','Carve','Print'].map((name,i)=><button key={name} disabled={i>0&&!custom.length} aria-current={(drawing?0:s?.view==='inspect'?1:2)===i?'step':undefined} onClick={()=>{setPanel(null);setDrawing(i===0);if(i>0)w().setView(i===1?'inspect':'work');}}><span>0{i+1}</span>{name}</button>)}</nav>
     <div className="composer-shell" hidden={!drawing}><DesignDialog onCreate={m=>{setCustom(a=>[...a,m]);setDrawing(false);w().selectMotif(m);}}/></div>
     {s&&!drawing&&<>
-      {s.view!=='work'&&<div className="scene-caption"><span className="overline">{s.view==='inspect'?'THE CARVED BLOCK':'YOUR TEXTILE'}</span><h1>{s.view==='inspect'?s.motif.name:'A length of your own.'}</h1></div>}
+      {s.view!=='work'&&<div className="scene-caption"><span className="overline">{s.view==='inspect'?'02 / WOOD, SHAPED BY YOU':'03 / THE FINISHED TEXTILE'}</span><h1>{s.view==='inspect'?'A mark takes form.':'A length of your own.'}</h1><p>{s.view==='inspect'?'Turn it in the light. Discover the relief.':'Small variations. One original piece.'}</p></div>}
       <div className="camera-tools" aria-label="Camera controls"><Tool label="Zoom in" onClick={()=>{w().zoom=Math.max(.65,w().zoom-.12);}}><span className="zoom-symbol">+</span></Tool><Tool label="Zoom out" onClick={()=>{w().zoom=Math.min(1.5,w().zoom+.12);}}><span className="zoom-symbol">-</span></Tool><Tool label="Reset view" onClick={()=>w().resetCamera()}><Maximize/></Tool></div>
       {s.view==='work'&&<div className="cloth-position"><Tool label="Move cloth left" onClick={()=>w().setOffset(s.clothOffset+2)} disabled={s.clothOffset>=7.5||s.pressing}><ChevronLeft/></Tool><label><span>Cloth position</span><input aria-label="Cloth position" type="range" min="-7.5" max="7.5" step=".1" value={-s.clothOffset} onChange={e=>w().setOffset(-Number(e.target.value))} disabled={s.pressing}/></label><Tool label="Move cloth right" onClick={()=>w().setOffset(s.clothOffset-2)} disabled={s.clothOffset<=-7.5||s.pressing}><ChevronRight/></Tool></div>}
       <div className="status-line" role="status" aria-live="polite"><span className={`ink-dot ${s.ink>0?'inked':''}`} style={{color:pigments[s.pigment].color}}/>{s.status}</div>

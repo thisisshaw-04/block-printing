@@ -1,4 +1,4 @@
-:root{--paper:#fff;--ink:#263e38;--muted:#73807b;--line:#e1e6e3;background:#f4f6f5;color:#29352f}
+:root{--paper:#fff;--ink:#292d32;--muted:#74818e;--line:#e5e9ee;background:#fff;color:#292d32}
 .masthead{height:82px;padding:16px 30px;background:#ffffffed;border-bottom:1px solid #dfe5e180;align-items:center}
 .studio[data-stage=compose] .masthead{background:#fff}
 .wordmark{flex-direction:row;align-items:center;gap:12px;font-size:25px}
