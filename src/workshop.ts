@@ -64,6 +64,7 @@ export class Workshop {
   audio:AudioContext|null=null;
   reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   disposed=false;
+  reality:'day'|'night'='day';
 
   constructor(readonly host:HTMLElement,readonly onChange:(s:Snapshot)=>void) {
     this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance',preserveDrawingBuffer:true});
@@ -82,10 +83,12 @@ export class Workshop {
     this.scene.add(sun);
     const fill=new THREE.DirectionalLight('#e4ecff',.45);fill.position.set(6,6,-3);this.scene.add(fill);
     this.scene.add(this.clothGroup,this.station,this.block);
-    const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:'#e6e3d9',roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-.57;floor.receiveShadow=true;this.scene.add(floor);
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:'#e6e3d9',roughness:1}));floor.name='studio-floor';floor.rotation.x=-Math.PI/2;floor.position.y=-.57;floor.receiveShadow=true;this.scene.add(floor);
     const tableMat=concreteMaterial();
     const table=new THREE.Mesh(new RoundedBoxGeometry(28,.52,9.1,3,.08),tableMat);table.name='worktable';table.position.y=-.28;table.receiveShadow=true;table.castShadow=true;this.scene.add(table);
-    const plinth=new THREE.Mesh(new THREE.CylinderGeometry(.96,1.02,1.3,80),concreteMaterial());plinth.name='inspection-plinth';plinth.position.set(0,.08,0);plinth.castShadow=true;plinth.receiveShadow=true;plinth.visible=false;this.scene.add(plinth);
+    const rockGeo=new THREE.DodecahedronGeometry(1.12,1);rockGeo.scale(1,.58,1);const rockPos=rockGeo.attributes.position;for(let i=0;i<rockPos.count;i++){const x=rockPos.getX(i),y=rockPos.getY(i),z=rockPos.getZ(i),n=1+.07*Math.sin(x*13+y*7+z*19);rockPos.setXYZ(i,x*n,y*n,z*n);}rockGeo.computeVertexNormals();
+    const rockMat=concreteMaterial();rockMat.color.set('#697064');
+    const plinth=new THREE.Mesh(rockGeo,rockMat);plinth.name='inspection-plinth';plinth.position.set(0,.06,0);plinth.castShadow=true;plinth.receiveShadow=true;plinth.visible=false;this.scene.add(plinth);
 
     this.paintTexture=canvasTexture(this.paintCanvas);this.paintTexture.wrapS=this.paintTexture.wrapT=THREE.ClampToEdgeWrapping;
     const weave=weaveTexture();
@@ -268,11 +271,20 @@ export class Workshop {
     this.station.visible=this.clothGroup.visible=!gallery;
     this.scene.getObjectByName('worktable')!.visible=!gallery;
     this.scene.getObjectByName('inspection-plinth')!.visible=gallery;
-    (this.scene.background as THREE.Color).set('#e9e7de');
+    this.setReality(this.reality);
     if(view==='inspect'){this.target.set(0,1.35,0);this.state.status='Turn the block. See the carved printing face.';}
     if(view==='work'){this.blockArt.rotation.x=0;this.target.set(-.7,.78,.75);this.state.held=true;this.state.status=this.state.ink>.065?'Position the block. Press, then lift.':'Touch the pigment pad to ink the block.';}
     if(view==='overview')this.state.status='Every impression, part of the whole.';
     this.emit();
+  }
+  setReality(reality:'day'|'night') {
+    this.reality=reality;const night=reality==='night';
+    (this.scene.background as THREE.Color).set(night?'#080d0b':'#f6f7f4');
+    const floor=this.scene.getObjectByName('studio-floor') as THREE.Mesh<THREE.PlaneGeometry,THREE.MeshStandardMaterial>;
+    floor.material.color.set(night?'#111e19':'#f4f5f1');
+    const table=this.scene.getObjectByName('worktable') as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>;
+    table.material.color.set(night?'#65796b':'#fafbf6');
+    this.renderer.toneMappingExposure=night?.8:.96;
   }
   resetCamera(){this.orbit=0;this.elevation=0;this.zoom=1;this.emit();}
   toggleMute(){this.state.muted=!this.state.muted;if(!this.state.muted)this.playSound('lift');this.emit();}

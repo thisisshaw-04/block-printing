@@ -1,32 +1,20 @@
-# Block printing studio — material and layout update
+# Botanical field studio
 
-Applied on 15 September 2026 to `work/printmakers-table`.
+The studio now follows the supplied botanical design reference: a floating stone and lotus specimen, white field, fine grid and annotation lines, compact square tools, and monospaced specimen panels. Compose remains an editable SVG workspace; the opening specimen disappears when a motif or drawn mark is added. Carve presents the relief on a faceted stone support. Print retains the interactive worktable.
 
-## Design
-
-- Warm ivory and stone surfaces, olive controls, and large editorial serif headings.
-- A desktop ornament sidebar with raised specimen tiles; a horizontal ornament tray on mobile.
-- A central, paper-toned composition canvas with dot guides, a compact floating toolbar, and an empty-state invitation.
-- A procedural concrete worktable and a cylindrical concrete pedestal for the 3D carved block. The printing blocks retain their wood materials.
-- Floating print, inspection, and camera controls; the Compose → Carve → Print workflow remains intact.
-
-Visual references:
-
-- [Palmer Dinnerware](https://mobbin.com/explore/sections/fc9350ab-c91b-40c0-aa6d-3f05444217cd): tactile objects, soft shadows, sparse controls.
-- [Metalab](https://mobbin.com/explore/sections/720da9bb-4c7f-43e0-b609-620d78d2666d): editorial typography and sculptural material presentation.
-- [Adaline](https://mobbin.com/explore/sections/4e09d146-d3ca-4dc5-b4b3-727545614224): quiet tones and a clear staged process.
-
-## Files
-
-`src/atelier.css` contains the new visual layer. Small updates to `main.tsx` and `DesignDialog.tsx` provide the new headings, ornament presentation, and canvas invitation. `materials.ts` and `workshop.ts` implement the concrete surface and inspection pedestal.
-
-The existing source changes were retained. The previous versions of the four edited source files were backed up in `C:/Users/user/Documents/ChatGPT/yoga proj/.block-printing-ui/originals`.
+The Change reality control switches between daylight and a dark green botanical view. It preserves the composition and stores the view preference locally. Responsive layouts retain access to the motif library and primary actions.
 
 ## Validation
 
-- TypeScript check and production build passed.
-- Existing journey test passed after updating the button label to “Carve this block”: composition, drag/drop, freehand, responsive fit, carving, editing, inking, stamping, undo/redo, and desktop/mobile WebGL.
-- Browser visual checks completed at 1440×900, 390×844, 375×667, and 844×390.
-- Screenshots from the journey check are in `qa/atelier`.
+- TypeScript check and production build pass.
+- Existing browser journey passes: motif click and drag/drop, freehand drawing, carve, edit, ink, stamp, undo/redo, and desktop/mobile WebGL.
+- Layouts checked at 1440×900, 390×844, 375×667 and 844×390.
+- Theme switching preserves artwork; the preference survives reload. Both themes visually inspected.
 
-The build refreshed `dist` and `outputs/saree-block-print/index.html`. This update has not been deployed to a hosted website.
+## Generated asset
+
+Mode: built-in image generation. Output: `src/assets/botanical-specimen.png` (embedded in the standalone build). Original: `C:/Users/user/.codex/generated_images/01a0a48b-74c3-7241-a75b-66b7e78cc67b/exec-55e378e6-52fc-4669-a87f-f8e461ce8baf.png`.
+
+Prompt:
+
+> Use case: stylized-concept. Create a single premium photorealistic 3D botanical specimen cutout for the opening view of an interactive block-printing design studio. A floating irregular dark basalt rock island, wide angular rough fractured underside and soft cushion of green moss on top. One graceful orange-red lotus-like flower on a slender stem rises above it, with 3 sparse tufts of fine grasses and a few natural small leaves. Two small clear optical-glass rectangular prisms intersect the front-right rock edge, with subtle white refraction. Sophisticated experimental art direction, natural materials meeting precision laboratory objects. View from slightly above at three-quarter angle, full object centered with generous transparent margin, square composition. Beautiful soft directional daylight from upper left, realistic fine moss/stone texture, understated colors and deep dimensional crevices. Actual transparent background with alpha; no floor, no environment, no cast ground shadow outside the object, no text, no labels, no interface, no logos, no watermark. Render a crisp 1024 square asset. This is a website asset, not a screenshot or UI mockup.
