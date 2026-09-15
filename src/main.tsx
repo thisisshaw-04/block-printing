@@ -9,6 +9,7 @@ import './gallery.css';
 import './atelier.css';
 import './specimen.css';
 import {DesignDialog} from './DesignDialog';
+import {Landing} from './Landing';
 declare global { interface Window { __workshop?:Workshop } }
 
 export function MotifIcon({motif}: {motif:Motif}) {return <svg viewBox="0 0 120 120" aria-hidden="true">{motif.paths.map((d,i)=><path key={i} d={d} fill="currentColor" fillRule="evenodd"/>)}</svg>;}
@@ -16,26 +17,30 @@ export function Tool({label,children,onClick,disabled=false,active=false}:{label
 function App(){
   const host=useRef<HTMLDivElement>(null),workshop=useRef<Workshop|null>(null);
   const [s,setS]=useState<Snapshot|null>(null),[panel,setPanel]=useState<'motif'|'pigment'|'about'|null>(null),[error,setError]=useState(''),[clear,setClear]=useState(false);
+  const [intro,setIntro]=useState(true);
   const [drawing,setDrawing]=useState(true),[custom,setCustom]=useState<Motif[]>([]);
   const [reality,setReality]=useState<'day'|'night'>(()=>{try{return localStorage.getItem('print-reality')==='night'?'night':'day';}catch{return 'day';}});
   const clearDialog=useRef<HTMLDialogElement>(null);
   useEffect(()=>{workshop.current?.setReality(reality);try{localStorage.setItem('print-reality',reality);}catch{}},[reality,s?.ready]);
   useEffect(()=>{if(clear)clearDialog.current?.showModal();},[clear]);
   useEffect(()=>{const close=(e:KeyboardEvent)=>{if(e.key==='Escape'){setPanel(null);setClear(false);}};window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close);},[]);
-  useEffect(()=>{try{const w=new Workshop(host.current!,setS);workshop.current=w;if(location.hostname==='127.0.0.1'||location.hostname==='localhost')window.__workshop=w;return()=>w.dispose();}catch(e){setError('The 3D workshop could not start. Please enable hardware acceleration in your browser and reload.');console.error(e);}},[]);
+  useEffect(()=>{if(intro||workshop.current)return;try{const w=new Workshop(host.current!,setS);workshop.current=w;if(location.hostname==='127.0.0.1'||location.hostname==='localhost')window.__workshop=w;}catch(e){setError('The 3D workshop could not start. Please enable hardware acceleration in your browser and reload.');console.error(e);}},[intro]);
+  useEffect(()=>()=>workshop.current?.dispose(),[]);
+  useEffect(()=>{if(!intro)requestAnimationFrame(()=>document.querySelector<HTMLHeadingElement>('.compose-heading h1')?.focus());},[intro]);
   const w=()=>workshop.current!;
-  return <main className="studio" data-reality={reality} data-view={s?.view??'work'} data-stage={drawing?'compose':s?.view==='inspect'?'carve':'print'}>
-    <div className="world" ref={host}/>
+  return <main className="studio" data-reality={reality} data-view={s?.view??'work'} data-stage={intro?'intro':drawing?'compose':s?.view==='inspect'?'carve':'print'}>
+    <div className="world" ref={host} inert={intro||drawing}/>
+    {intro&&<Landing onBegin={()=>{setIntro(false);setDrawing(true);setPanel(null);}}/>}
     <button type="button" className="reality-switch" onClick={()=>setReality(reality==='day'?'night':'day')} aria-label="Studio light" aria-pressed={reality==='night'}><span>STUDIO LIGHT</span><svg viewBox="0 0 40 22" aria-hidden="true"><ellipse cx="20" cy="11" rx="18" ry="9"/><ellipse cx="20" cy="11" rx="8" ry="9"/><path d="M2 11h36M20 2v18M5 6h30M5 16h30"/></svg><small>{reality==='day'?'DAY / 01':'NIGHT / 02'}</small></button>
     <header className="masthead">
-      <a className="wordmark" href="#" onClick={e=>{e.preventDefault();setDrawing(true);setPanel(null);}}><span className="brand-seal"><MotifIcon motif={motifs[3]}/></span><span className="brand-name">PRINTMAKER’S<span>AN EXPERIMENT IN IMPRESSION</span></span></a>
+      <a className="wordmark" href="#" onClick={e=>{e.preventDefault();setIntro(true);setPanel(null);}}><span className="brand-seal"><MotifIcon motif={motifs[3]}/></span><span className="brand-name">PRINTMAKER’S<span>AN EXPERIMENT IN IMPRESSION</span></span></a>
       <nav className="header-tools" aria-label="Studio"><span className="edition">THE PRINTMAKER'S TABLE</span><span className="mobile-overview"><Tool label="View whole textile" disabled={!s||s.pressing} onClick={()=>{setPanel(null);w().setView(s?.view==='overview'?'work':'overview');}}><Expand/></Tool></span><Tool label={s?.muted?'Enable sound':'Mute sound'} disabled={!s} onClick={()=>w().toggleMute()}>{s?.muted?<VolumeX/>:<Volume2/>}</Tool><Tool label="About the craft" onClick={()=>setPanel(panel==='about'?null:'about')} active={panel==='about'}><Info/></Tool></nav>
     </header>
     {!s&&!error&&<div className="loading"><span className="loading-mark"/><p>Preparing the worktable</p></div>}
     {error&&<div className="error" role="alert"><h1>One moment</h1><p>{error}</p><button className="primary" onClick={()=>location.reload()}>Reload workshop</button></div>}
-    <nav className="journey" aria-label="Making stages">{['Compose','Carve','Print'].map((name,i)=><button key={name} disabled={i>0&&!custom.length} aria-current={(drawing?0:s?.view==='inspect'?1:2)===i?'step':undefined} onClick={()=>{setPanel(null);setDrawing(i===0);if(i>0)w().setView(i===1?'inspect':'work');}}><span>0{i+1}</span>{name}</button>)}</nav>
-    <div className="composer-shell" hidden={!drawing}><DesignDialog onCreate={m=>{setCustom(a=>[...a,m]);setDrawing(false);w().selectMotif(m);}}/></div>
-    {s&&!drawing&&<>
+    <nav className="journey" aria-label="Making stages" inert={intro}>{['Compose','Carve','Print'].map((name,i)=><button key={name} disabled={i>0&&!custom.length} aria-current={(drawing?0:s?.view==='inspect'?1:2)===i?'step':undefined} onClick={()=>{setPanel(null);setDrawing(i===0);if(i>0)w().setView(i===1?'inspect':'work');}}><span>0{i+1}</span>{name}</button>)}</nav>
+    <div className="composer-shell" hidden={intro||!drawing}><DesignDialog onCreate={m=>{setCustom(a=>[...a,m]);setDrawing(false);w().selectMotif(m);}}/></div>
+    {s&&!intro&&!drawing&&<>
       {s.view!=='work'&&<div className="scene-caption"><span className="overline">{s.view==='inspect'?'02 / WOOD, SHAPED BY YOU':'03 / THE FINISHED TEXTILE'}</span><h1>{s.view==='inspect'?'MATTER, IN FORM.':'PATTERN, BY HAND.'}</h1><p>{s.view==='inspect'?'Turn it in the light. Discover the relief.':'Small variations. One original piece.'}</p></div>}
       {s.view==='inspect'&&<><div className="specimen-reading"><span className="reading-title">YOUR CARVED BLOCK</span><dl><dt>MATERIAL</dt><dd>Carved wood</dd><dt>PROCESS</dt><dd>Relief printing</dd><dt>SCALE</dt><dd>{s.size.toFixed(2)} ×</dd></dl><span className="reading-foot">DRAG TO TURN ↗</span></div><div className="carve-annotation" aria-hidden="true"><i/>RAISED SURFACE<br/>CARRIES THE PIGMENT</div></>}
       <div className="camera-tools" aria-label="Camera controls"><Tool label="Zoom in" onClick={()=>{w().zoom=Math.max(.65,w().zoom-.12);}}><span className="zoom-symbol">+</span></Tool><Tool label="Zoom out" onClick={()=>{w().zoom=Math.min(1.5,w().zoom+.12);}}><span className="zoom-symbol">-</span></Tool><Tool label="Reset view" onClick={()=>w().resetCamera()}><Maximize/></Tool></div>
