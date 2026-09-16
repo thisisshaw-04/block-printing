@@ -47,16 +47,16 @@ function FloatingBlock({pointer,onBegin}:{pointer:React.RefObject<{x:number;y:nu
   const fill=new THREE.DirectionalLight('#e3eafa',2.2);fill.position.set(4,-1,2);scene.add(fill);
   const rim=new THREE.DirectionalLight('#ffb35e',3.6);rim.position.set(-3,1,-2);scene.add(rim);
   const block=new THREE.Group();scene.add(block);
-  const wood=woodMaterial(true),raised=woodMaterial();wood.color.setRGB(.95,.82,.7);
+  const wood=woodMaterial(true),raised=woodMaterial();wood.color.set('#a39889');wood.roughness=.92;wood.normalScale.set(.72,.72);
   const pigment=canvas(512,512),ctx=pigment.getContext('2d')!,pixels=ctx.createImageData(512,512),random=seeded(81);
   for(let i=0;i<pixels.data.length;i+=4){const wear=random()>.985,v=wear?120:205+random()*45;pixels.data[i]=v;pixels.data[i+1]=v;pixels.data[i+2]=v;pixels.data[i+3]=255;}
-  ctx.putImageData(pixels,0,0);raised.map?.dispose();raised.map=canvasTexture(pigment);raised.color.set('#23776e');raised.roughness=.66;raised.normalScale.set(.38,.38);
+  ctx.putImageData(pixels,0,0);raised.map?.dispose();raised.map=canvasTexture(pigment);raised.color.set('#04668c');raised.roughness=.69;raised.normalScale.set(.38,.38);
   const outline=new THREE.Shape();heroOutline.forEach(([x,y],i)=>{const px=(x-60)*2.5/120,py=(60-y)*2.5/120;if(i===0)outline.moveTo(px,py);else outline.lineTo(px,py);});outline.closePath();
   const bodyGeo=new THREE.ExtrudeGeometry(outline,{depth:.43,bevelEnabled:true,bevelSize:.022,bevelThickness:.018,bevelSegments:3,steps:3});bodyGeo.translate(0,0,-.215);
   const bodyUV=bodyGeo.attributes.uv;for(let i=0;i<bodyUV.count;i++)bodyUV.setXY(i,bodyUV.getX(i)/2.5+.5,bodyUV.getY(i)/2.5+.5);
   const body=new THREE.Mesh(bodyGeo,wood);body.castShadow=true;body.receiveShadow=true;block.add(body);
   const shapes=new SVGLoader().parse(svgMarkup(heroMotif)).paths.flatMap(p=>SVGLoader.createShapes(p));
-  const reliefGeo=new THREE.ExtrudeGeometry(shapes,{depth:5.4,bevelEnabled:true,bevelSize:.12,bevelThickness:.2,bevelSegments:2,curveSegments:16});
+  const reliefGeo=new THREE.ExtrudeGeometry(shapes,{depth:3.7,bevelEnabled:true,bevelSize:.035,bevelThickness:.12,bevelSegments:2,curveSegments:12});
   reliefGeo.scale(2.5/120,2.5/120,2.5/120);reliefGeo.translate(-1.25,-1.25,.224);
   const uv=reliefGeo.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/120,uv.getY(i)/120);
   const relief=new THREE.Mesh(reliefGeo,[raised,wood]);relief.scale.y=-1;relief.castShadow=true;relief.receiveShadow=true;block.add(relief);
