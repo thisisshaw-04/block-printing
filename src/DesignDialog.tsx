@@ -26,7 +26,7 @@ export function DesignDialog({onCreate}:{onCreate:(m:Motif)=>void}){
  const copy=()=>{const e=elements.find(e=>e.id===selected);if(e)setClipboard({...e,paths:[...e.paths]});return e;};
  const paste=(source=clipboard)=>{if(!source)return;remember();const item={...source,paths:[...source.paths],id:++serial.current,x:Math.min(105,source.x+5),y:Math.min(105,source.y+5)};setElements(a=>[...a,item]);setSelected(item.id);setMode('move');setClipboard(item);};
  useEffect(()=>{const key=(e:KeyboardEvent)=>{
-  if((e.target as HTMLElement).closest('input,textarea,select,[contenteditable=true]')||gesture.current)return;
+  if(surface.current?.closest('[hidden]')||(e.target as HTMLElement).closest('input,textarea,select,[contenteditable=true]')||gesture.current)return;
   const mod=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
   if(mod&&['c','x','v','d','z','y'].includes(k)){e.preventDefault();e.stopImmediatePropagation();if(k==='c')copy();if(k==='x'){if(copy())remove();}if(k==='v')paste();if(k==='d'){const el=copy();if(el)paste(el);}if(k==='z')e.shiftKey?redo():undo();if(k==='y')redo();}
   else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();remove();}
