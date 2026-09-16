@@ -13,6 +13,7 @@ export type Snapshot = {
   ready:boolean;held:boolean;ink:number;pigment:number;motif:Motif;count:number;redo:number;
   view:'work'|'inspect'|'overview';mode:'free'|'repeat'|'border';rotation:number;size:number;
   muted:boolean;status:string;clothOffset:number;pressing:boolean;
+  snap:boolean;showGrid:boolean;showPreview:boolean;spacing:number;
 };
 const W=24,H=5.6,TEX_W=4096,TEX_H=Math.round(TEX_W*H/W),RELIEF=.115;
 const clamp=THREE.MathUtils.clamp;
@@ -47,9 +48,13 @@ export class Workshop {
   readonly baseHeights:Float32Array;
   history:Impression[]=[];
   future:Impression[]=[];
-  state:Snapshot={ready:false,held:false,ink:0,pigment:0,motif:motifs[0],count:0,redo:0,view:'work',mode:'free',rotation:0,size:.86,muted:true,status:'Pick up a block. Make your first impression.',clothOffset:0,pressing:false};
+  state:Snapshot={ready:false,held:false,ink:0,pigment:0,motif:motifs[0],count:0,redo:0,view:'work',mode:'free',rotation:0,size:.86,muted:true,status:'Pick up a block. Make your first impression.',clothOffset:0,pressing:false,snap:false,showGrid:false,showPreview:true,spacing:1.2};
   pointer=new THREE.Vector2();
   hoverPoint:THREE.Vector3|null=null;
+  guide=new THREE.Group();
+  previewCanvas=canvas(512,512);
+  previewTexture=canvasTexture(this.previewCanvas);
+  preview=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({transparent:true,depthWrite:false,depthTest:false,opacity:.5}));
   press:null|{start:number;released:number|null;kind:'cloth'|'ink';committed:boolean;lift:number|null;fromY:number;contactY:number;point:THREE.Vector3;from:THREE.Vector3;travel:number}=null;
   rotation=0;
   frame=0;
@@ -100,11 +105,13 @@ export class Workshop {
     }
     clothGeo.computeVertexNormals();
     const linen=linenTexture();
-    const clothMat=new THREE.MeshStandardMaterial({map:this.paintTexture,bumpMap:linen,bumpScale:.09,roughness:1,side:THREE.DoubleSide,color:'#fffdf5'});
+    const clothMat=new THREE.MeshPhysicalMaterial({map:this.paintTexture,bumpMap:linen,bumpScale:.025,roughness:.94,sheen:.35,sheenRoughness:.9,sheenColor:'#f4eee1',side:THREE.DoubleSide,color:'#ffffff'});
     clothMat.onBeforeCompile=shader=>{shader.uniforms.linen={value:linen};shader.fragmentShader='uniform sampler2D linen;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\nfloat fiber = dot(texture2D(linen, vMapUv * vec2(10., 2.3333)).rgb, vec3(.299,.587,.114));\ndiffuseColor.rgb *= .72 + fiber * .45;');};
     this.cloth=new THREE.Mesh(clothGeo,clothMat);
     this.cloth.receiveShadow=true;this.cloth.castShadow=true;this.clothGroup.add(this.cloth);
     this.addFringe();this.redrawTextile();
+    this.clothGroup.add(this.guide);this.rebuildGrid();
+    this.preview.material.map=this.previewTexture;this.preview.rotation.x=-Math.PI/2;this.preview.renderOrder=10;this.preview.visible=false;this.scene.add(this.preview);
 
     const tray=new THREE.Mesh(new RoundedBoxGeometry(1.88,.29,1.36,3,.07),this.darkWood);tray.name='ink-tray';tray.position.copy(this.padPosition);tray.position.y=.15;tray.castShadow=true;tray.receiveShadow=true;this.station.add(tray);
     const padMat=new THREE.MeshStandardMaterial({color:pigments[0].color,roughness:.56,bumpMap:weave,bumpScale:.008});
@@ -167,6 +174,7 @@ export class Workshop {
     const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:'#e6e1d5',roughness:1,bumpMap:weaveTexture(),bumpScale:.01,side:THREE.DoubleSide}));mesh.position.set(2.8,.02,3.5);mesh.rotation.y=-.18;mesh.castShadow=true;mesh.receiveShadow=true;this.station.add(mesh);
   }
   makeBlock() {
+    this.updatePreviewTexture();
     while(this.blockArt.children.length){const child=this.blockArt.children.pop()!;child.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});child.parent=null;}
     this.relief.clear();
     const s=this.state.size;
@@ -178,6 +186,19 @@ export class Workshop {
     const label=canvas(256,256),ctx=label.getContext('2d')!;ctx.translate(128,128);ctx.scale(1.5,1.5);ctx.translate(-60,-60);ctx.fillStyle='rgba(37,24,12,.24)';this.state.motif.paths.forEach(d=>ctx.fill(new Path2D(d),'evenodd'));
     const mark=new THREE.Mesh(new THREE.PlaneGeometry(s*.85,s*.85),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(label),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));mark.rotation.x=-Math.PI/2;mark.position.y=.376;this.blockArt.add(mark);
   }
+  updatePreviewTexture(){
+    const c=this.previewCanvas.getContext('2d')!;c.clearRect(0,0,512,512);c.save();c.scale(512/120,512/120);c.fillStyle=pigments[this.state.pigment].color;this.state.motif.paths.forEach(d=>c.fill(new Path2D(d),'evenodd'));c.restore();
+    c.strokeStyle='#496f85';c.lineWidth=2;c.setLineDash([10,7]);c.strokeRect(2,2,508,508);c.setLineDash([]);this.previewTexture.needsUpdate=true;
+  }
+  rebuildGrid(){
+    this.guide.children.forEach(o=>{const l=o as THREE.LineSegments;l.geometry.dispose();(l.material as THREE.Material).dispose();});this.guide.clear();const p:number[]=[],step=this.state.mode==='repeat'?this.state.size*1.35:this.state.spacing;
+    for(let x=Math.ceil(-W/2/step)*step;x<=W/2;x+=step)p.push(x,.122,-H/2,x,.122,H/2);
+    for(let z=Math.ceil(-H/2/step)*step;z<=H/2;z+=step)p.push(-W/2,.122,z,W/2,.122,z);
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));this.guide.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:'#62859a',transparent:true,opacity:.28,depthWrite:false})));
+  }
+  setGuides(patch:Partial<Pick<Snapshot,'snap'|'showGrid'|'showPreview'|'spacing'>>){if(this.press)return;Object.assign(this.state,patch);this.state.spacing=clamp(this.state.spacing,.3,2.5);this.rebuildGrid();this.realign();this.emit();}
+  realign(){if(this.hoverPoint){this.hoverPoint=this.align(this.hoverPoint);this.target.x=this.hoverPoint.x;this.target.z=this.hoverPoint.z;}}
+  printHere(){if(!this.state.held||this.press)return;if(!this.hoverPoint){this.state.status='Choose a position on the cloth first.';this.emit();return;}this.startPress('cloth',this.align(this.hoverPoint),true);}
   bindEvents() {
     const el=this.renderer.domElement;
     const on=(target:EventTarget,name:string,fn:EventListener,options?:AddEventListenerOptions)=>{target.addEventListener(name,fn,options);this.disposals.push(()=>target.removeEventListener(name,fn,options));};
@@ -218,7 +239,7 @@ export class Workshop {
     if(!this.state.held){if(this.ray.intersectObject(this.block,true).length){this.pickUp();}return;}
     if(this.press)return;
     if(this.ray.intersectObject(this.pad)[0]){this.startPress('ink',this.padPosition.clone());return;}
-    const hit=this.hitCloth();if(hit)this.startPress('cloth',this.align(hit));
+    const hit=this.hitCloth();if(hit){this.hoverPoint=this.align(hit);this.target.set(this.hoverPoint.x,.85,this.hoverPoint.z);if(e.pointerType!=='touch')this.startPress('cloth',this.hoverPoint);else this.emit();}
   };
   pointerUp=()=>{
     this.draggingView=false;
@@ -230,17 +251,19 @@ export class Workshop {
     if(document.querySelector('[data-stage="compose"]'))return;
     if((e.target as HTMLElement).closest('input,textarea,button,[role="dialog"]'))return;
     if(e.ctrlKey||e.metaKey){if(e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?this.redo():this.undo();}return;}
-    if(e.code==='Space'){e.preventDefault();if(!this.state.held)this.pickUp();else if(!e.repeat&&!this.press)this.startPress('cloth',this.target.clone(),true);}
+    if(e.code==='Space'){e.preventDefault();if(!this.state.held)this.pickUp();else if(!e.repeat)this.printHere();}
     if(e.key.toLowerCase()==='q')this.rotate(-Math.PI/12);if(e.key.toLowerCase()==='e')this.rotate(Math.PI/12);
     if(e.key==='Escape'){if(this.state.view!=='work')this.setView('work');else this.putDown();}
     if(e.key.toLowerCase()==='i')this.inkBlock();
-    if(e.key.startsWith('Arrow')){e.preventDefault();const step=.12;this.target.x+=e.key==='ArrowRight'?step:e.key==='ArrowLeft'?-step:0;this.target.z+=e.key==='ArrowDown'?step:e.key==='ArrowUp'?-step:0;}
+    if(e.key.startsWith('Arrow')){e.preventDefault();const step=this.state.mode==='repeat'?this.state.size*1.35:this.state.snap?this.state.spacing:.12;const p=(this.hoverPoint??this.target).clone();p.x+=e.key==='ArrowRight'?step:e.key==='ArrowLeft'?-step:0;p.z+=e.key==='ArrowDown'?step:e.key==='ArrowUp'?-step:0;this.hoverPoint=this.align(p);this.realign();}
   };
   align(p:THREE.Vector3) {
     p=p.clone();const size=this.state.size,offset=this.state.clothOffset;
+    if(this.state.snap){const step=this.state.spacing;p.x=Math.round((p.x-offset)/step)*step+offset;p.z=Math.round(p.z/step)*step;}
     if(this.state.mode==='repeat'){const step=size*1.35;p.x=Math.round((p.x-offset)/step)*step+offset;p.z=Math.round(p.z/step)*step;}
     if(this.state.mode==='border')p.z=Math.sign(p.z||1)*(H/2-size*.7);
-    p.x=clamp(p.x,-W/2+offset+size*.6,W/2+offset-size*.6);p.z=clamp(p.z,-H/2+size*.6,H/2-size*.6);return p;
+    const margin=size*.5*(Math.abs(Math.cos(this.state.rotation))+Math.abs(Math.sin(this.state.rotation)))+.03;
+    p.x=clamp(p.x,-W/2+offset+margin,W/2+offset-margin);p.z=clamp(p.z,-H/2+margin,H/2-margin);return p;
   }
   startPress(kind:'cloth'|'ink',point:THREE.Vector3,autoRelease=false) {
     if(this.press||this.state.view!=='work')return;
@@ -256,11 +279,11 @@ export class Workshop {
   putDown() {if(this.press)return;this.state.held=false;this.target.y=this.fabricHeight(this.target.x-this.state.clothOffset,this.target.z)+RELIEF+.008;this.state.status='Pick up your block to continue.';this.emit();}
   inkBlock() {if(this.press)return;this.setView('work');this.state.held=true;this.target.copy(this.padPosition);this.startPress('ink',this.padPosition.clone(),true);}
   resetPigment(){this.state.ink=0;this.reliefMaterial.map=this.wood.map;this.reliefMaterial.color.setRGB(2.7,2.3,1.75);this.reliefMaterial.roughness=.73;this.reliefMaterial.needsUpdate=true;}
-  setPigment(i:number) {if(this.press)return;this.state.pigment=i;(this.pad.material as THREE.MeshStandardMaterial).color.set(pigments[i].color);this.resetPigment();this.state.status=`${pigments[i].name} is on the pad. Ink your block.`;this.emit();}
+  setPigment(i:number) {if(this.press)return;this.state.pigment=i;(this.pad.material as THREE.MeshStandardMaterial).color.set(pigments[i].color);this.resetPigment();this.state.status=`${pigments[i].name} is on the pad. Ink your block.`;this.updatePreviewTexture();this.emit();}
   selectMotif(motif:Motif) {if(this.press)return;this.state.motif=motif;this.resetPigment();this.makeBlock();this.inspectTime=performance.now();this.setView('inspect');this.state.status='A flat motif, carved into relief.';this.emit();}
-  rotate(r:number) {if(this.press)return;this.state.rotation+=r;this.emit();}
-  setSize(size:number) {if(this.press)return;this.state.size=size;this.makeBlock();this.emit();}
-  setMode(mode:Snapshot['mode']){this.state.mode=mode;this.emit();}
+  rotate(r:number) {if(this.press)return;this.state.rotation+=r;this.realign();this.emit();}
+  setSize(size:number) {if(this.press)return;this.state.size=size;this.makeBlock();this.rebuildGrid();this.realign();this.emit();}
+  setMode(mode:Snapshot['mode']){this.state.mode=mode;this.rebuildGrid();this.realign();this.emit();}
   setOffset(value:number){if(this.press||this.state.view!=='work')return;this.state.clothOffset=clamp(value,-7.5,7.5);this.clothGroup.position.x=this.state.clothOffset;this.emit();}
   setView(view:Snapshot['view']) {
     if(this.press)return;
@@ -272,6 +295,7 @@ export class Workshop {
     this.setReality(this.reality);
     if(view==='inspect'){this.target.set(0,1.35,0);this.state.status='Turn the block. See the carved printing face.';}
     if(view==='work'){this.blockArt.rotation.x=0;this.target.set(-.7,.78,.75);this.state.held=true;this.state.status=this.state.ink>.065?'Position the block. Press, then lift.':'Touch the pigment pad to ink the block.';}
+    if(view==='work')this.realign();
     if(view==='overview')this.state.status='Every impression, part of the whole.';
     this.emit();
   }
@@ -336,6 +360,9 @@ export class Workshop {
     this.camera.position.lerp(this.cameraGoal,1-Math.exp(-dt*4));this.lookAt.lerp(this.lookGoal,1-Math.exp(-dt*4));this.camera.lookAt(this.lookAt);
     this.clothGroup.position.x=THREE.MathUtils.damp(this.clothGroup.position.x,view==='overview'?0:this.state.clothOffset,10,dt);
     this.block.visible=view!=='overview';this.shadow.visible=view==='work';
+    this.guide.visible=view==='work'&&this.state.showGrid;
+    this.preview.visible=view==='work'&&this.state.held&&this.state.showPreview&&!!this.hoverPoint&&!this.press;
+    if(this.hoverPoint){const p=this.align(this.hoverPoint);this.preview.position.set(p.x,this.fabricHeight(p.x-this.state.clothOffset,p.z)+.016,p.z);this.preview.rotation.set(-Math.PI/2,0,-this.state.rotation);this.preview.scale.set(this.state.size,this.state.size,1);}
     this.blockArt.rotation.x=THREE.MathUtils.damp(this.blockArt.rotation.x,view==='inspect'?-2.17:0,7,dt);
     this.relief.scale.y=THREE.MathUtils.lerp(this.relief.scale.y,view==='inspect'?clamp((time-this.inspectTime)/750,.02,1):1,lerp);
     this.rotation=THREE.MathUtils.damp(this.rotation,this.state.rotation+(view==='inspect'?Math.sin(time*.0003)*.14:0),12,dt);this.block.rotation.y=-this.rotation;
