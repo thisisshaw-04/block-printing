@@ -58,6 +58,16 @@
 .landing-entry{left:60%}
 @media(max-width:760px){.hero-block-wrap{left:50%;top:49%;width:100%;height:49%}.block-orbit{left:50%;top:49%;width:100%;height:49%}.discovery-points{left:50%;top:50%;width:calc(100% - 112px);height:40%}.discovery-point{width:108px;gap:7px}.point-label{font-size:10px}.point-disc{width:36px;height:36px}.point-0,.point-3{left:0}.point-1,.point-2{left:100%}.landing-entry{left:50%}}
 
+/* Markers use points on the same ellipse as the visible orbit. */
+.process-orbit{position:absolute;inset:0;width:100%;height:100%;overflow:visible;fill:none;stroke:var(--rule);stroke-width:1;pointer-events:none}
+.process-orbit ellipse{vector-effect:non-scaling-stroke}
+.discovery-points{height:64%}
+.discovery-point{width:44px;height:44px;padding:0;gap:0;display:block}
+.point-label{position:absolute;top:calc(100% + 9px);left:50%;transform:translateX(-50%);width:150px;text-align:center}
+.point-0 .point-label,.point-1 .point-label{top:auto;bottom:calc(100% + 9px)}
+.point-0{left:18.887%;top:18.887%}.point-1{left:81.113%;top:18.887%}.point-2{left:81.113%;top:81.113%}.point-3{left:18.887%;top:81.113%}
+@media(max-width:760px){.discovery-points{width:calc(100% - 24px);height:50%;top:50%}.discovery-point{width:36px;height:36px}.point-label{width:115px}.point-0,.point-3{left:18.887%}.point-1,.point-2{left:81.113%}.point-0,.point-1{top:18.887%}.point-2,.point-3{top:81.113%}}
+
 /* Composition is a working editor with a horizontal motif tray. */
 .studio[data-stage=compose] .masthead{height:72px;padding:22px 28px;border-bottom:1px solid var(--rule)}
 .studio[data-stage=compose] .journey{top:30px;gap:26px}

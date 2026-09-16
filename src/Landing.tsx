@@ -12,6 +12,7 @@ import './practice.css';
 import reliefPhoto from './assets/practice-relief.png';
 import pigmentPhoto from './assets/practice-pigment.png';
 import printingPhoto from './assets/practice-printing.png';
+import repeatPhoto from './assets/practice-repeat.jpg';
 
 const discoveries=[
  {label:'Carve the block',body:'The design is traced onto wood. The maker cuts away the spaces around it, leaving a raised printing surface.',source:'https://www.dsource.in/resource/pethapur-block-making/making-process'},
@@ -26,7 +27,7 @@ function DiscoveryDrawing({index}:{index:number}){
   {src:reliefPhoto,alt:'Carved wooden printing block with blue pigment on its raised floral relief',caption:'Carved relief and its printed impression.'},
   {src:pigmentPhoto,alt:'A red-inked floral block held above its impression on yellow fabric',caption:'Pigment on the raised face transfers to cloth.'},
   {src:printingPhoto,alt:'Hands aligning and pressing wooden blocks onto repeating textile patterns',caption:'Align, press, lift, and repeat.'},
-  {src:printingPhoto,alt:'Printers using handled wooden blocks to stamp fabric by hand',caption:'The printer controls placement and pressure.'},
+  {src:repeatPhoto,alt:'A printer aligning a handled block with floral repeats on yellow fabric',caption:'Aligning the next impression.'},
  ];
  const photo=photos[index];
  return <figure className="practice-reference"><img src={photo.src} alt={photo.alt}/></figure>;
@@ -88,9 +89,8 @@ export function Landing({onBegin}:{onBegin:()=>void}){
  return <section className="landing" aria-label="Introduction to block printing" onPointerMove={e=>{const r=e.currentTarget.getBoundingClientRect();pointer.current={x:(e.clientX-r.left)/r.width*2-1,y:(e.clientY-r.top)/r.height*2-1};}} onPointerLeave={()=>{pointer.current={x:0,y:0};}} onKeyDown={e=>{if(e.key==='Escape')setActive(null);}}>
   <div className="landing-grid" aria-hidden="true"/>
   <div className="landing-heading"><span className="landing-eyebrow">THE PRINTMAKER'S TABLE</span><h1>Block<br/><em>printing.</em></h1><p>A design is carved into a wooden block, coated with colour, then pressed onto fabric. Repeating the print builds the pattern.</p></div>
-  <div className="block-orbit" aria-hidden="true"><svg viewBox="0 0 700 600"><ellipse cx="350" cy="303" rx="290" ry="204" transform="rotate(-24 350 303)"/><path d="M87 220h50M543 130h54M580 426h47M136 460h40"/><circle cx="350" cy="303" r="260" strokeDasharray="1 18"/></svg></div>
   <div className="hero-block-wrap"><div className="block-shadow" aria-hidden="true"/><FloatingBlock pointer={pointer} onBegin={onBegin}/></div>
-  <div className="discovery-points" aria-label="Discover the craft">{discoveries.map((d,i)=><button key={d.label} className={`discovery-point point-${i} ${active===i?'is-active':''}`} aria-label={`Discover ${d.label.toLowerCase()}`} aria-expanded={active===i} aria-controls="discovery-card" onPointerEnter={e=>{if(e.pointerType==='mouse')open(i);}} onPointerLeave={e=>{if(e.pointerType==='mouse')closeSoon();}} onFocus={()=>open(i)} onBlur={closeSoon} onClick={()=>open(i)}><span className="point-disc">0{i+1}<Plus size={15}/></span><span className="point-label">{d.label}</span></button>)}</div>
+  <div className="discovery-points" aria-label="Discover the craft"><svg className="process-orbit" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="50" rx="44" ry="44"/></svg>{discoveries.map((d,i)=><button key={d.label} className={`discovery-point point-${i} ${active===i?'is-active':''}`} aria-label={`Discover ${d.label.toLowerCase()}`} aria-expanded={active===i} aria-controls="discovery-card" onPointerEnter={e=>{if(e.pointerType==='mouse')open(i);}} onPointerLeave={e=>{if(e.pointerType==='mouse')closeSoon();}} onFocus={()=>open(i)} onBlur={closeSoon} onClick={()=>open(i)}><span className="point-disc">0{i+1}<Plus size={15}/></span><span className="point-label">{d.label}</span></button>)}</div>
   {current&&<aside className="discovery-card compact-discovery" id="discovery-card" aria-label={current.label} aria-live="polite" onPointerEnter={keepOpen} onPointerLeave={closeSoon} onFocusCapture={keepOpen} onBlurCapture={closeSoon}><DiscoveryDrawing index={active!}/><p>{current.body}</p></aside>}
   <div className="landing-entry"><span className="entry-cue">MOVE TO TILT · DRAG TO TURN</span><button onClick={onBegin}>Click the block. Make it yours.<ArrowRight size={17}/></button><span className="entry-caption">BEGIN WITH 01 / COMPOSE</span></div>
  </section>;
