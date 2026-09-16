@@ -11,6 +11,7 @@ import './specimen.css';
 import {DesignDialog} from './DesignDialog';
 import {Landing} from './Landing';
 import './editorial.css';
+import './textile.css';
 declare global { interface Window { __workshop?:Workshop } }
 
 export function MotifIcon({motif}: {motif:Motif}) {return <svg viewBox="0 0 120 120" aria-hidden="true">{motif.paths.map((d,i)=><path key={i} d={d} fill="currentColor" fillRule="evenodd"/>)}</svg>;}

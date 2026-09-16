@@ -2,7 +2,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {build} from 'esbuild';
 const root=import.meta.dirname;
-const result=await build({entryPoints:[resolve(root,'src/main.tsx')],bundle:true,minify:true,format:'iife',target:'es2022',outdir:resolve(root,'dist/client'),write:false,define:{'process.env.NODE_ENV':'"production"'},loader:{'.woff2':'dataurl','.jpg':'dataurl','.png':'dataurl'}});
+const result=await build({entryPoints:[resolve(root,'src/main.tsx')],bundle:true,minify:true,format:'iife',target:'es2022',outdir:resolve(root,'dist/client'),write:false,define:{'process.env.NODE_ENV':'"production"'},loader:{'.woff2':'dataurl','.jpg':'dataurl','.png':'dataurl','.svg':'dataurl'}});
 const js=result.outputFiles.find(f=>f.path.endsWith('.js')).text;
 const css=result.outputFiles.find(f=>f.path.endsWith('.css')).text;
 const html=`<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#fafaf5"><meta name="description" content="A quiet, tactile block-printing workshop. Choose a carved motif, ink it by hand, and create your own textile."><title>Block Printing - The Printmaker's Table</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%2329352f'/%3E%3Cpath d='M16 5Q6 13 16 23Q26 13 16 5M5 14Q7 28 16 26Q25 28 27 14Q16 18 16 26Q16 18 5 14' fill='%23fafaf5'/%3E%3C/svg%3E"><style>${css}</style></head><body><div id="root"></div><script>${js.replaceAll('</script','<\\/script')}</script></body></html>`;

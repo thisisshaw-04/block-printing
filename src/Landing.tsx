@@ -50,7 +50,7 @@ function FloatingBlock({pointer,onBegin}:{pointer:React.RefObject<{x:number;y:nu
   const wood=woodMaterial(true),raised=woodMaterial();wood.color.setRGB(.95,.82,.7);
   const pigment=canvas(512,512),ctx=pigment.getContext('2d')!,pixels=ctx.createImageData(512,512),random=seeded(81);
   for(let i=0;i<pixels.data.length;i+=4){const wear=random()>.985,v=wear?120:205+random()*45;pixels.data[i]=v;pixels.data[i+1]=v;pixels.data[i+2]=v;pixels.data[i+3]=255;}
-  ctx.putImageData(pixels,0,0);raised.map?.dispose();raised.map=canvasTexture(pigment);raised.color.set('#286579');raised.roughness=.66;raised.normalScale.set(.38,.38);
+  ctx.putImageData(pixels,0,0);raised.map?.dispose();raised.map=canvasTexture(pigment);raised.color.set('#23776e');raised.roughness=.66;raised.normalScale.set(.38,.38);
   const outline=new THREE.Shape();heroOutline.forEach(([x,y],i)=>{const px=(x-60)*2.5/120,py=(60-y)*2.5/120;if(i===0)outline.moveTo(px,py);else outline.lineTo(px,py);});outline.closePath();
   const bodyGeo=new THREE.ExtrudeGeometry(outline,{depth:.43,bevelEnabled:true,bevelSize:.022,bevelThickness:.018,bevelSegments:3,steps:3});bodyGeo.translate(0,0,-.215);
   const bodyUV=bodyGeo.attributes.uv;for(let i=0;i<bodyUV.count;i++)bodyUV.setXY(i,bodyUV.getX(i)/2.5+.5,bodyUV.getY(i)/2.5+.5);
