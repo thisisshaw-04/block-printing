@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {SVGLoader} from 'three/addons/loaders/SVGLoader.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {ArrowUpRight,ArrowRight,X,Plus} from 'lucide-react';
+import {ArrowRight,Plus} from 'lucide-react';
 import {woodMaterial,canvas,canvasTexture,seeded} from './materials';
 import {motifs,svgMarkup} from './motifs';
 import {heroMotif,heroOutline} from './heroMotif';
@@ -98,7 +98,7 @@ export function Landing({onBegin}:{onBegin:()=>void}){
   <div className="block-orbit" aria-hidden="true"><svg viewBox="0 0 700 600"><ellipse cx="350" cy="303" rx="290" ry="204" transform="rotate(-24 350 303)"/><path d="M87 220h50M543 130h54M580 426h47M136 460h40"/><circle cx="350" cy="303" r="260" strokeDasharray="1 18"/></svg></div>
   <div className="hero-block-wrap"><div className="block-shadow" aria-hidden="true"/><FloatingBlock pointer={pointer} onBegin={onBegin}/></div>
   <div className="discovery-points" aria-label="Discover the craft">{discoveries.map((d,i)=><button key={d.label} className={`discovery-point point-${i} ${active===i?'is-active':''}`} aria-label={`Discover ${d.label.toLowerCase()}`} aria-expanded={active===i} aria-controls="discovery-card" onPointerEnter={e=>{if(e.pointerType==='mouse')open(i);}} onPointerLeave={e=>{if(e.pointerType==='mouse')closeSoon();}} onFocus={()=>open(i)} onBlur={closeSoon} onClick={()=>open(i)}><span className="point-disc">0{i+1}<Plus size={15}/></span><span className="point-label">{d.label}</span></button>)}</div>
-  {current&&<aside className="discovery-card compact-discovery" id="discovery-card" aria-label={current.label} aria-live="polite" onPointerEnter={keepOpen} onPointerLeave={closeSoon} onFocusCapture={keepOpen} onBlurCapture={closeSoon}><button className="discovery-close" aria-label="Close discovery" onClick={()=>{keepOpen();setActive(null);}}><X size={16}/></button><DiscoveryDrawing index={active!}/><p>{paragraphs[active!]}</p></aside>}
+  {current&&<aside className="discovery-card compact-discovery" id="discovery-card" aria-label={current.label} aria-live="polite" onPointerEnter={keepOpen} onPointerLeave={closeSoon} onFocusCapture={keepOpen} onBlurCapture={closeSoon}><DiscoveryDrawing index={active!}/><p>{paragraphs[active!]}</p></aside>}
   <div className="landing-entry"><span className="entry-cue">MOVE TO TILT · DRAG TO TURN</span><button onClick={onBegin}>Click the block. Make it yours.<ArrowRight size={17}/></button><span className="entry-caption">BEGIN WITH 01 / COMPOSE</span></div>
  </section>;
 }
