@@ -89,7 +89,10 @@ export class Workshop {
     const fill=new THREE.DirectionalLight('#e4ecff',.45);fill.position.set(6,6,-3);this.scene.add(fill);
     this.scene.add(this.clothGroup,this.station,this.block);
     const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:'#e6e3d9',roughness:1}));floor.name='studio-floor';floor.rotation.x=-Math.PI/2;floor.position.y=-.57;floor.receiveShadow=true;this.scene.add(floor);
-    const tableMat=concreteMaterial();
+    const tableMat=woodMaterial(true);
+    tableMat.map!.repeat.set(6,2);tableMat.normalMap!.repeat.set(6,2);
+    tableMat.map!.rotation=tableMat.normalMap!.rotation=Math.PI/2;
+    tableMat.normalScale.set(.22,.22);tableMat.roughness=.74;
     const table=new THREE.Mesh(new RoundedBoxGeometry(28,.52,9.1,3,.08),tableMat);table.name='worktable';table.position.y=-.28;table.receiveShadow=true;table.castShadow=true;this.scene.add(table);
     const plinth=new THREE.Mesh(new THREE.CylinderGeometry(.9,.94,.13,64),concreteMaterial());plinth.name='inspection-plinth';plinth.position.set(0,-.38,0);plinth.castShadow=true;plinth.receiveShadow=true;plinth.visible=false;this.scene.add(plinth);
 
@@ -305,7 +308,7 @@ export class Workshop {
     const floor=this.scene.getObjectByName('studio-floor') as THREE.Mesh<THREE.PlaneGeometry,THREE.MeshStandardMaterial>;
     floor.material.color.set(night?'#111e19':'#f4f5f1');
     const table=this.scene.getObjectByName('worktable') as THREE.Mesh<THREE.BufferGeometry,THREE.MeshStandardMaterial>;
-    table.material.color.set(night?'#65796b':'#fafbf6');
+    table.material.color.set(night?'#8d9895':'#e5d4b9');
     this.renderer.toneMappingExposure=night?.8:.96;
   }
   resetCamera(){this.orbit=0;this.elevation=0;this.zoom=1;this.emit();}
