@@ -14,10 +14,10 @@ import pigmentPhoto from './assets/practice-pigment.png';
 import printingPhoto from './assets/practice-printing.png';
 
 const discoveries=[
- {label:'The block',title:'Carve away. Leave a mark.',kicker:'01 / WOOD → RELIEF',body:'A maker removes the wood around a design. The raised surface is what touches the cloth. In Pethapur, Gujarat, block makers trace, drill and chisel seasoned teak, then finish the block with a handle.',source:'D’source · IDC, IIT Bombay',url:'https://www.dsource.in/resource/pethapur-block-making/making-process',note:'The raised parts print. The spaces stay clear.'},
- {label:'The colour',title:'Colour has a method.',kicker:'02 / BLOCK → COLOUR',body:'Direct printing puts colour onto cloth. In resist printing, a paste protects selected areas while the cloth is dyed. Complex multicolour designs can need several blocks, each carrying a different part of the design and aligned to the last.',source:'V&A · Resist block printing',url:'https://www.vam.ac.uk/blog/fabric-of-india/location-scout-part-ii-resist-block-printing',note:'Different blocks. One layered design.'},
- {label:'The repeat',title:'One stamp becomes a rhythm.',kicker:'03 / MARK → PATTERN',body:'Press, lift, align, repeat. Small registration points help the printer place one impression beside the next. A single motif can travel across a length of cloth, building a pattern through careful, repeated movements.',source:'D’source · Making process',url:'https://www.dsource.in/resource/pethapur-block-making/making-process',note:'Look for the tiny alignment marks.'},
- {label:'The people',title:'A living craft, in many places.',kicker:'04 / KNOWLEDGE → GENERATIONS',body:'India’s printing traditions are distinct, shaped by local materials and communities. Bagru, Sanganer, Bagh and ajrakh each have their own practices. Block makers, printers and dyers bring different skills to the same piece of cloth.',source:'Impart · Museum of Art & Photography',url:'https://imp-art.org/articles/block-printing/',note:'Many traditions. No single recipe.'},
+ {label:'Carve the block',body:'The design is traced onto wood. The maker cuts away the spaces around it, leaving a raised printing surface.',source:'https://www.dsource.in/resource/pethapur-block-making/making-process'},
+ {label:'Apply the colour',body:'The raised face is pressed onto a colour pad. An even coating helps transfer the fine carved details to the cloth.',source:'https://us.daughtersofindia.net/blogs/on-the-journal/postcards-from-india-issue-10-hand-block-printing'},
+ {label:'Press onto fabric',body:'Prepared fabric is laid flat on a padded table. The printer positions the inked block, presses firmly, then lifts it to reveal the impression.',source:'https://us.daughtersofindia.net/blogs/on-the-journal/postcards-from-india-issue-10-hand-block-printing'},
+ {label:'Align and repeat',body:'The next impression is aligned with the last, using repeat points on the block. The printer reloads the colour and continues across the fabric.',source:'https://www.dsource.in/resource/pethapur-block-making/making-process'},
 ];
 
 function Motif({x=0,y=0,size=100,index=1}:{x?:number;y?:number;size?:number;index?:number}){return <g transform={`translate(${x} ${y}) scale(${size/120})`} fill="currentColor">{motifs[index].paths.map((d,i)=><path key={i} d={d} fillRule="evenodd"/>)}</g>;}
@@ -84,12 +84,6 @@ export function Landing({onBegin}:{onBegin:()=>void}){
  const closeSoon=()=>{keepOpen();closeTimer.current=setTimeout(()=>setActive(null),180);};
  const open=(i:number)=>{keepOpen();setActive(i);};
  useEffect(()=>{const outside=(e:PointerEvent)=>{if(!(e.target as HTMLElement).closest('.discovery-point,.discovery-card')){keepOpen();setActive(null);}};document.addEventListener('pointerdown',outside);return()=>{keepOpen();document.removeEventListener('pointerdown',outside);};},[]);
- const paragraphs=[
-  'The design stands above the carved wood. Only this raised surface touches the fabric, leaving the recessed spaces unprinted.',
-  'A thin layer of pigment coats the raised design. Pressing the block onto the cloth transfers the colour and reveals the carved details.',
-  'The printer aligns each block with the previous impression, presses, then lifts straight up to build a repeating pattern.',
-  'Hands guide every impression. Placement, pressure and the amount of pigment give each length of hand-printed cloth its small variations.',
- ];
  const current=active===null?null:discoveries[active];
  return <section className="landing" aria-label="Introduction to block printing" onPointerMove={e=>{const r=e.currentTarget.getBoundingClientRect();pointer.current={x:(e.clientX-r.left)/r.width*2-1,y:(e.clientY-r.top)/r.height*2-1};}} onPointerLeave={()=>{pointer.current={x:0,y:0};}} onKeyDown={e=>{if(e.key==='Escape')setActive(null);}}>
   <div className="landing-grid" aria-hidden="true"/>
@@ -97,7 +91,7 @@ export function Landing({onBegin}:{onBegin:()=>void}){
   <div className="block-orbit" aria-hidden="true"><svg viewBox="0 0 700 600"><ellipse cx="350" cy="303" rx="290" ry="204" transform="rotate(-24 350 303)"/><path d="M87 220h50M543 130h54M580 426h47M136 460h40"/><circle cx="350" cy="303" r="260" strokeDasharray="1 18"/></svg></div>
   <div className="hero-block-wrap"><div className="block-shadow" aria-hidden="true"/><FloatingBlock pointer={pointer} onBegin={onBegin}/></div>
   <div className="discovery-points" aria-label="Discover the craft">{discoveries.map((d,i)=><button key={d.label} className={`discovery-point point-${i} ${active===i?'is-active':''}`} aria-label={`Discover ${d.label.toLowerCase()}`} aria-expanded={active===i} aria-controls="discovery-card" onPointerEnter={e=>{if(e.pointerType==='mouse')open(i);}} onPointerLeave={e=>{if(e.pointerType==='mouse')closeSoon();}} onFocus={()=>open(i)} onBlur={closeSoon} onClick={()=>open(i)}><span className="point-disc">0{i+1}<Plus size={15}/></span><span className="point-label">{d.label}</span></button>)}</div>
-  {current&&<aside className="discovery-card compact-discovery" id="discovery-card" aria-label={current.label} aria-live="polite" onPointerEnter={keepOpen} onPointerLeave={closeSoon} onFocusCapture={keepOpen} onBlurCapture={closeSoon}><DiscoveryDrawing index={active!}/><p>{paragraphs[active!]}</p></aside>}
+  {current&&<aside className="discovery-card compact-discovery" id="discovery-card" aria-label={current.label} aria-live="polite" onPointerEnter={keepOpen} onPointerLeave={closeSoon} onFocusCapture={keepOpen} onBlurCapture={closeSoon}><DiscoveryDrawing index={active!}/><p>{current.body}</p></aside>}
   <div className="landing-entry"><span className="entry-cue">MOVE TO TILT · DRAG TO TURN</span><button onClick={onBegin}>Click the block. Make it yours.<ArrowRight size={17}/></button><span className="entry-caption">BEGIN WITH 01 / COMPOSE</span></div>
  </section>;
 }
