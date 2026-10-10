@@ -9,7 +9,7 @@ const html=`<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta nam
 await mkdir(resolve(root,'dist/server'),{recursive:true});
 await mkdir(resolve(root,'dist/.openai'),{recursive:true});
 await writeFile(resolve(root,'dist/index.html'),html);
-await writeFile(resolve(root,'../../outputs/saree-block-print/index.html'),html);
+if(process.env.GITHUB_ACTIONS!=='true')await writeFile(resolve(root,'../../outputs/saree-block-print/index.html'),html);
 await writeFile(resolve(root,'dist/.openai/hosting.json'),await readFile(resolve(root,'.openai/hosting.json')));
 await writeFile(resolve(root,'dist/server/index.js'),`const HTML=${JSON.stringify(html)};export default {fetch(request){const url=new URL(request.url);if(url.pathname==='/health')return new Response('ok');return new Response(HTML,{headers:{'content-type':'text/html;charset=utf-8','cache-control':'no-cache'}})}};`);
 console.log('Built the 3D workshop.');
