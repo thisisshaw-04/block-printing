@@ -48,7 +48,7 @@ export class Workshop {
   readonly baseHeights:Float32Array;
   history:Impression[]=[];
   future:Impression[]=[];
-  state:Snapshot={ready:false,held:false,ink:0,pigment:0,motif:motifs[0],count:0,redo:0,view:'work',mode:'free',rotation:0,size:.86,muted:true,status:'Pick up a block. Make your first impression.',clothOffset:0,pressing:false,snap:false,showGrid:false,showPreview:true,spacing:1.2};
+  state:Snapshot={ready:false,held:false,ink:0,pigment:0,motif:motifs[0],count:0,redo:0,view:'work',mode:'free',rotation:0,size:1.15,muted:true,status:'Pick up a block. Make your first impression.',clothOffset:0,pressing:false,snap:false,showGrid:false,showPreview:true,spacing:1.2};
   pointer=new THREE.Vector2();
   hoverPoint:THREE.Vector3|null=null;
   guide=new THREE.Group();
@@ -294,7 +294,7 @@ export class Workshop {
     const gallery=view==='inspect';
     this.station.visible=this.clothGroup.visible=!gallery;
     this.scene.getObjectByName('worktable')!.visible=!gallery;
-    this.scene.getObjectByName('inspection-plinth')!.visible=gallery;
+    this.scene.getObjectByName('inspection-plinth')!.visible=false;
     this.setReality(this.reality);
     if(view==='inspect'){this.target.set(0,1.35,0);this.state.status='Turn the block. See the carved printing face.';}
     if(view==='work'){this.blockArt.rotation.x=0;this.target.set(-.7,.78,.75);this.state.held=true;this.state.status=this.state.ink>.065?'Position the block. Press, then lift.':'Touch the pigment pad to ink the block.';}
@@ -357,8 +357,8 @@ export class Workshop {
     if(this.disposed)return;const dt=Math.min((time-this.lastTime)/1000,.2)||.016;this.lastTime=time;const lerp=1-Math.exp(-dt*12), view=this.state.view,aspect=this.camera.aspect;
     const mobile=aspect<.9;const distance=(mobile?1.43:1)*this.zoom;
     if(view==='overview'){this.lookGoal.set(0,0,0);this.cameraGoal.set(0,(mobile?58:Math.max(20,40/aspect))*this.zoom,2.7);}
-    else if(view==='inspect'){const inspectDistance=Math.max(.9,this.state.size/.86);this.lookGoal.set(0,1.25,0);this.cameraGoal.set(Math.sin(this.orbit)*3,1.25+(1.35+this.elevation)*inspectDistance,2.25*distance*inspectDistance);}
-    else {this.lookGoal.set(0,0,.8);this.cameraGoal.set(Math.sin(this.orbit)*9, (7.7+this.elevation)*distance,7.4*distance);}
+    else if(view==='inspect'){const inspectDistance=Math.max(.9,this.state.size/.86);this.lookGoal.set(0,1.19,0);this.cameraGoal.set(Math.sin(this.orbit)*2.1,1.19+(.92+this.elevation)*inspectDistance,1.5*distance*inspectDistance);}
+    else {this.lookGoal.set(0,.03,.28);this.cameraGoal.set(Math.sin(this.orbit)*1.15, (7.65+this.elevation)*distance,2.2*distance);}
     this.camera.up.lerp(view==='overview'&&mobile?new THREE.Vector3(1,0,0):new THREE.Vector3(0,1,0),1-Math.exp(-dt*4)).normalize();
     this.camera.position.lerp(this.cameraGoal,1-Math.exp(-dt*4));this.lookAt.lerp(this.lookGoal,1-Math.exp(-dt*4));this.camera.lookAt(this.lookAt);
     this.clothGroup.position.x=THREE.MathUtils.damp(this.clothGroup.position.x,view==='overview'?0:this.state.clothOffset,10,dt);
